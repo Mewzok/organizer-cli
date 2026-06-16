@@ -1,11 +1,104 @@
 from pathlib import Path
 import json
 
-def load_config():
-    with open('config.json', 'r') as file:
-        config = json.load(file)
+DEFAULT_CONFIG = {
+    "Images": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".avif",
+        ".gif",
+        ".tif",
+        ".tiff",
+        ".raw",
+        ".cr2",
+        ".nef",
+        ".svg",
+        ".eps"
+    ],
+    "Documents": [
+        ".docx",
+        ".doc",
+        ".pdf",
+        ".txt",
+        ".rtf",
+        ".odt",
+        ".xlsx",
+        ".xls",
+        ".ods",
+        ".csv",
+        ".pptx",
+        ".ppt",
+        ".odp",
+        ".indd",
+        ".pub",
+        ".html",
+        ".htm"
+    ],
+    "Videos": [
+        ".mp4",
+        ".mov",
+        ".mkv",
+        ".webm",
+        ".avo"
+    ],
+    "Archives": [
+        ".zip",
+        ".zipx",
+        ".rar",
+        ".7z",
+        ".tar",
+        ".gz",
+        ".gzip",
+        ".tar.gz",
+        ".tgz"
+    ],
+    "Other": [
+        ".*"
+    ]
+}
 
-        return config
+def manage_default_config() -> dict:
+    # filepath is at root of this python script
+    filepath = Path(__file__).resolve().parent / "config.json"
+
+    # if config doesn't exist, create default
+    if not filepath.exists():
+        print(f"Config not found. Creating a default one at: {filepath}")
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        filepath.write_text(json.dumps(DEFAULT_CONFIG, indent=4), encoding="utf-8")
+        return DEFAULT_CONFIG
+
+    # if config exists
+    try:
+        content = filepath.read_text(encoding="utf-8")
+        if not content.strip():
+            raise json.JSONDecodeError("Config file is empty", content, 0)
+        
+        config_data = json.loads(content)
+
+        # verify config_data is a dictionary structure
+        if not isinstance(config_data, dict):
+            raise ValueError("Config root is not a JSON object (dictionary)")
+        
+        return config_data
+    
+    except (json.JSONDecodeError, ValueError) as exc:
+        # this only creates the path in memory
+        print(f"Config file at {filepath} is malformed. Error: {exc}")
+        backup_path = filepath.with_suffix(".json.bak")
+        print(f"Backing up corrupted config to: {backup_path}")
+
+        # this actually renames the file to the backup path created
+        if filepath.exists():
+            filepath.replace(backup_path)
+
+        # generate fresh default config file
+        filepath.write_text(json.dumps(DEFAULT_CONFIG, indent=4), encoding="utf-8")
+        print("Generated a fresh default configuration file.")
+
+        return DEFAULT_CONFIG
 
 def manage_subfolders(user_path, config):
 
@@ -52,6 +145,8 @@ def main():
             if user_input.lower() in {"q", "quit", "exit"}:
                 print("\nGoodbye.")
                 return
+            
+            # check for --config, ALSO, create default config
 
             # check for dry run            
             dry_run = False
@@ -67,7 +162,7 @@ def main():
             
             # convert user path string into Path
             user_path = Path(user_input)
-            config = load_config()
+            config = manage_default_config()
             manage_subfolders(user_path, config)
             plan = build_plan(user_path, config)
 
@@ -79,14 +174,14 @@ def main():
                     # testing
                     # execute_plan()
                     print("Plan executed")
-                    return
                 else:
                     print("Organization cancelled.")
-                    return
             else:
                 # testing
                 # execute plan()
                 print("Plan executed")
+            
+            return
             
         except ValueError as exc:
             print(str(exc))
@@ -99,7 +194,7 @@ def main():
             print("Input stream ended unexpectedly. Please run the command again.")
             return
         except Exception as exc:
-            print("An unexptected error occured.", str(exc))
+            print("An unexpected error occured.", str(exc))
 
         
 if __name__ == "__main__":
