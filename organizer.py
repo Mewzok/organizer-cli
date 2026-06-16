@@ -1,4 +1,7 @@
 from pathlib import Path
+import shlex
+import argparse
+import sys
 import json
 
 DEFAULT_CONFIG = {
@@ -59,7 +62,7 @@ DEFAULT_CONFIG = {
     ]
 }
 
-def manage_default_config() -> dict:
+def manage_default_config():
     # filepath is at root of this python script
     filepath = Path(__file__).resolve().parent / "config.json"
 
@@ -99,6 +102,68 @@ def manage_default_config() -> dict:
         print("Generated a fresh default configuration file.")
 
         return DEFAULT_CONFIG
+    
+def parse_interactive_input(user_input: str):
+    try:
+        tokens = shlex.split(user_input)
+    except ValueError as e:
+        print(f"Malformed quotes in your input: {e}")
+        return None
+    
+    parser = argparse.ArgumentParser(exit_on_error=False)
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--config", type=str, default=None)
+
+    try:
+        args, remaining_tokens = parser.parse_known_args(tokens)
+    except argparse.ArgumentError as e:
+        if "--config" in str(e):
+            print("Error: The --config flag requires a path to a valid JSON config file.")
+            print("Example: C:/Downloads --config C:/path/to/config.json")
+        else:
+            print(f"Invalid flags entered: {e}")
+        return None
+    
+    if not remaining_tokens:
+        print("Error: Please provide a valid target folder path along with your flags.")
+        return None
+    
+    folder_str = " ".join(remaining_tokens)
+
+    return {
+        "folder_path": Path(folder_str),
+        "dry_run": args.dry_run,
+        "config_path": Path(args.config) if args.config else None
+    }
+
+def manage_user_config(config_path):
+    # if config doesn't exist, create default
+    if not config_path.exists():
+        print(f"Specified config not found at '{config_path}'\n"
+              f"Please check the file path and try again."
+        )
+        sys.exit(1)
+
+    # if config exists
+    try:
+        content = config_path.read_text(encoding="utf-8")
+        if not content.strip():
+            raise ValueError("Config file is empty.")
+        
+        config_data = json.loads(content)
+
+        # verify config_data is a dictionary structure
+        if not isinstance(config_data, dict):
+            raise ValueError("Config root is not a JSON object (dictionary)")
+        
+        return config_data
+    
+    except (json.JSONDecodeError, ValueError) as exc:
+        print(f"Config file at {config_path} is invalid or malformed.\n"
+              f"Details: {exc}\n"
+              f"Please fix formatting errors before rerunning."
+        )
+        sys.exit(1)
 
 def manage_subfolders(user_path, config):
 
@@ -144,44 +209,39 @@ def main():
 
             if user_input.lower() in {"q", "quit", "exit"}:
                 print("\nGoodbye.")
-                return
-            
-            # check for --config, ALSO, create default config
+                break
 
-            # check for dry run            
-            dry_run = False
-            if "--dry-run" in user_input:
-                dry_run = True
-                user_input = user_input.replace("--dry-run", "").strip()
-
-            print(user_input)
-
-            if not user_input:
-                print("Error: Please provide a valid path alongside the --dry-run flag.")
+            # parse input to check for arguments
+            parsed = parse_interactive_input(user_input)
+            if not parsed:
                 continue
-            
-            # convert user path string into Path
-            user_path = Path(user_input)
-            config = manage_default_config()
+
+            # split into useful variables
+            user_path = parsed["folder_path"]
+            dry_run_flag = parsed["dry_run"]
+            custom_config_path = parsed["config_path"]
+
+            # check for and use custom config, else use or create default
+            if custom_config_path:
+                config = manage_user_config(custom_config_path)
+            else:
+                config = manage_default_config()
+
             manage_subfolders(user_path, config)
             plan = build_plan(user_path, config)
 
-            if dry_run:
+            # check for dry run
+            if dry_run_flag:
                 print_plan(plan)
-                confirm_response = input("Confirm? (Y/N): ").strip().lower()
-
-                if confirm_response in {"y", "yes"}:
-                    # testing
-                    # execute_plan()
+                confirm = input("Confirm? (Y/N): ").strip().lower()
+                if confirm in {"y", "yes"}:
                     print("Plan executed")
                 else:
                     print("Organization cancelled.")
             else:
-                # testing
-                # execute plan()
                 print("Plan executed")
-            
-            return
+
+            break
             
         except ValueError as exc:
             print(str(exc))
