@@ -42,28 +42,51 @@ def main():
     while True:
         try:
             # testing
-            user_path = "C:/Users/User/Downloads/test"
-            # user_path = input("Enter path to desired folder (or type 'quit' to exit): ").strip()
+            # user_path = "C:/Users/User/Downloads/test"
+            user_input = input("Enter path to desired folder (or type 'quit' to exit): ").strip()
 
-            if not user_path:
+            if not user_input:
                 print("Please enter a correct path before continuing.")
                 continue
 
-            if user_path.lower() in {"q", "quit", "exit"}:
+            if user_input.lower() in {"q", "quit", "exit"}:
                 print("\nGoodbye.")
                 return
+
+            # check for dry run            
+            dry_run = False
+            if "--dry-run" in user_input:
+                dry_run = True
+                user_input = user_input.replace("--dry-run", "").strip()
+
+            print(user_input)
+
+            if not user_input:
+                print("Error: Please provide a valid path alongside the --dry-run flag.")
+                continue
             
             # convert user path string into Path
-            user_path = Path(user_path)
-
+            user_path = Path(user_input)
             config = load_config()
-
             manage_subfolders(user_path, config)
-
             plan = build_plan(user_path, config)
 
-            print_plan(plan)
-            break
+            if dry_run:
+                print_plan(plan)
+                confirm_response = input("Confirm? (Y/N): ").strip().lower()
+
+                if confirm_response in {"y", "yes"}:
+                    # testing
+                    # execute_plan()
+                    print("Plan executed")
+                    return
+                else:
+                    print("Organization cancelled.")
+                    return
+            else:
+                # testing
+                # execute plan()
+                print("Plan executed")
             
         except ValueError as exc:
             print(str(exc))
