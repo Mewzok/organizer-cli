@@ -1,22 +1,28 @@
 from pathlib import Path
 
-def scan_folder(user_path):
-    directory_path = Path(user_path)
+SUBFOLDERS = ["Images", "Documents", "Videos", "Archives", "Other"]
 
+def scan_folder(user_path):
     # for each item in the directory, does not enter subfolders
-    for item in directory_path.iterdir():
+    for item in user_path.iterdir():
         if item.is_file():
             print(item.name)
 
     return
+
+def manage_subfolders(user_path):
+
+    for subfolder in SUBFOLDERS:
+        new_folder_path = user_path / subfolder
+        new_folder_path.mkdir(exist_ok=True)
 
 def main():
     # handle retrieving user path
     while True:
         try:
             # testing
-            # user_path = "C:/Users/User/Downloads/test"
-            user_path = input("Enter path to desired folder (or type 'quit' to exit): ").strip()
+            user_path = "C:/Users/User/Downloads/test"
+            # user_path = input("Enter path to desired folder (or type 'quit' to exit): ").strip()
 
             if not user_path:
                 print("Please enter a correct path before continuing.")
@@ -26,7 +32,11 @@ def main():
                 print("\nGoodbye.")
                 return
             
+            # convert user path string into Path
+            user_path = Path(user_path)
+            
             scan_folder(user_path)
+            manage_subfolders(user_path)
             break
             
         except ValueError as exc:
