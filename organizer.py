@@ -1,20 +1,41 @@
 from pathlib import Path
+import json
 
-SUBFOLDERS = ["Images", "Documents", "Videos", "Archives", "Other"]
+def load_config():
+    with open('config.json', 'r') as file:
+        config = json.load(file)
 
-def scan_folder(user_path):
+        return config
+
+def manage_subfolders(user_path, config):
+
+    for folder_name, extensions in config.items():
+        folder_path = user_path / folder_name
+        folder_path.mkdir(exist_ok=True)
+
+def build_plan(user_path, config):
+    plan = []
+
     # for each item in the directory, does not enter subfolders
     for item in user_path.iterdir():
         if item.is_file():
-            print(item.name)
+            destination = find_destination(item, config)
+            plan.append((item, destination))
 
-    return
+    return plan
 
-def manage_subfolders(user_path):
+def find_destination(item, config):
+    # create a reverse lookup dictionary to search for extensions as keys
+    ext_to_folder = {}
+    for folder, extensions in config.items():
+        for ext in extensions:
+            ext_to_folder[ext.lower()] = folder
 
-    for subfolder in SUBFOLDERS:
-        new_folder_path = user_path / subfolder
-        new_folder_path.mkdir(exist_ok=True)
+    return ext_to_folder.get(item.suffix, "Other")
+
+def print_plan(plan):
+    for source, destination in plan:
+        print(f"{source.name} -> {destination}")
 
 def main():
     # handle retrieving user path
@@ -34,9 +55,14 @@ def main():
             
             # convert user path string into Path
             user_path = Path(user_path)
-            
-            scan_folder(user_path)
-            manage_subfolders(user_path)
+
+            config = load_config()
+
+            manage_subfolders(user_path, config)
+
+            plan = build_plan(user_path, config)
+
+            print_plan(plan)
             break
             
         except ValueError as exc:
