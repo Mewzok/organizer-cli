@@ -1,18 +1,21 @@
 from pathlib import Path
 
-TEST_PATH = Path("C:/Users/User/Downloads/test")
+def scan_folder(user_path):
+    directory_path = Path(user_path)
 
-directory_path = TEST_PATH
+    # for each item in the directory, does not enter subfolders
+    for item in directory_path.iterdir():
+        if item.is_file():
+            print(item.name)
 
-# for each item in the directory, does not enter subfolders
-for item in directory_path.iterdir():
-    if item.is_file():
-        print(item.name)
+    return
 
 def main():
     # handle retrieving user path
     while True:
         try:
+            # testing
+            # user_path = "C:/Users/User/Downloads/test"
             user_path = input("Enter path to desired folder (or type 'quit' to exit): ").strip()
 
             if not user_path:
@@ -22,6 +25,9 @@ def main():
             if user_path.lower() in {"q", "quit", "exit"}:
                 print("\nGoodbye.")
                 return
+            
+            scan_folder(user_path)
+            break
             
         except ValueError as exc:
             print(str(exc))
@@ -36,5 +42,6 @@ def main():
         except Exception as exc:
             print("An unexptected error occured.", str(exc))
 
+        
 if __name__ == "__main__":
     main()
