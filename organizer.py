@@ -169,12 +169,6 @@ def manage_user_config(config_path):
         )
         sys.exit(1)
 
-def manage_subfolders(user_path, config):
-
-    for folder_name, extensions in config.items():
-        folder_path = user_path / folder_name
-        folder_path.mkdir(exist_ok=True)
-
 def build_plan(user_path, config):
     plan = {}
 
@@ -313,7 +307,6 @@ def main():
             else:
                 config = manage_default_config()
 
-            manage_subfolders(user_path, config)
             plan = build_plan(user_path, config)
 
             # check for dry run
