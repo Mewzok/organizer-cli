@@ -48,7 +48,7 @@ DEFAULT_CONFIG = {
         ".mov",
         ".mkv",
         ".webm",
-        ".avo"
+        ".avi"
     ],
     "Archives": [
         ".zip",
