@@ -312,13 +312,6 @@ def main():
             # check for dry run
             if dry_run_flag:
                 print_plan(plan)
-                confirm = input("Confirm? (Y/N): ").strip().lower()
-                if confirm in {"y", "yes"}:
-                    execute_plan(plan)
-                else:
-                    print("Organization cancelled.")
-            else:
-                execute_plan(plan)
 
             break
             
