@@ -61,9 +61,7 @@ DEFAULT_CONFIG = {
         ".tar.gz",
         ".tgz"
     ],
-    "Other": [
-        ".*"
-    ]
+    "Other": []
 }
 
 def manage_default_config():
