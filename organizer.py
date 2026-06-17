@@ -186,7 +186,7 @@ def build_plan(user_path, config):
     # for each item in the directory, is_file() ensures it does not enter subfolders
     for file_path in user_path.iterdir():
         if file_path.is_file():
-            # ensure script itself is not include in organization
+            # ensure script itself is not included in organization
             if file_path.name == Path(sys.argv[0]).name:
                 continue
 
@@ -194,9 +194,11 @@ def build_plan(user_path, config):
             if file_path.name.startswith(".") or file_path.name.lower() == "desktop.ini":
                 continue
 
-            ext = file_path.suffix.lower()
-
-            target_folder_name = ext_to_folder.get(ext, "Other")
+            ext = "".join(file_path.suffixes).lower()
+            target_folder_name = ext_to_folder.get(ext)
+            if target_folder_name is None:
+                ext = file_path.suffix.lower()
+                target_folder_name = ext_to_folder.get(ext, "Other")
             target_folder_path = user_path / target_folder_name
 
             safe_destination = get_unique_destination(target_folder_path, file_path.name)
@@ -297,6 +299,14 @@ def main():
             dry_run_flag = parsed["dry_run"]
             custom_config_path = parsed["config_path"]
 
+            if not user_path.exists():
+                print(f"Error: The folder path '{user_path}' does not exist.")
+                continue
+
+            if not user_path.is_dir():
+                print(f"Error: The path '{user_path}' is not a folder.")
+                continue
+
             # check for and use custom config, else use or create default
             if custom_config_path:
                 config = manage_user_config(custom_config_path)
@@ -330,7 +340,7 @@ def main():
             print("Input stream ended unexpectedly. Please run the command again.")
             return
         except Exception as exc:
-            print("An unexpected error occured.", str(exc))
+            print("An unexpected error occurred.", str(exc))
 
         
 if __name__ == "__main__":
