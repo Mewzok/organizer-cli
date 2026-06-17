@@ -172,28 +172,65 @@ def manage_subfolders(user_path, config):
         folder_path.mkdir(exist_ok=True)
 
 def build_plan(user_path, config):
-    plan = []
+    plan = {}
 
-    # for each item in the directory, does not enter subfolders
-    for item in user_path.iterdir():
-        if item.is_file():
-            destination = find_destination(item, config)
-            plan.append((item, destination))
+    ext_to_folder = {}
+    for folder_name, extensions in config.items():
+        for ext in extensions:
+            ext_to_folder[ext.lower()] = folder_name
+
+    # for each item in the directory, is_file() ensures it does not enter subfolders
+    for file_path in user_path.iterdir():
+        if file_path.is_file():
+            ext = file_path.suffix.lower()
+
+            target_folder_name = ext_to_folder.get(ext, "Other")
+            target_folder_path = user_path / target_folder_name
+
+            safe_destination = get_unique_destination(target_folder_path, file_path.name)
+
+            plan[file_path] = safe_destination
 
     return plan
 
-def find_destination(item, config):
-    # create a reverse lookup dictionary to search for extensions as keys
-    ext_to_folder = {}
-    for folder, extensions in config.items():
-        for ext in extensions:
-            ext_to_folder[ext.lower()] = folder
+def get_unique_destination(target_folder, filename):
+    destination = target_folder / filename
 
-    return ext_to_folder.get(item.suffix, "Other")
+    # check if file name already exists and rename if it does
+    if not destination.exists():
+        return destination
+    
+    stem = destination.stem
+    suffix = destination.suffix
+
+    counter = 1
+
+    while True:
+        new_filename = f"{stem} ({counter}){suffix}"
+        destination = target_folder / new_filename
+
+        if not destination.exists():
+            return destination
+        
+        counter += 1
 
 def print_plan(plan):
-    for source, destination in plan:
-        print(f"{source.name} -> {destination}")
+    if not plan:
+        print("No files found to organize.")
+        return
+    
+    for src_path, dest_path in plan.items():
+        # extract original file name
+        original_name = src_path.name
+        # extract destination folder name
+        dest_folder = dest_path.parent.name
+        # extract final file name (if file was renamed due to duplicate)
+        final_name = dest_path.name
+
+        if original_name == final_name:
+            print(f"{original_name} -> {dest_folder}")
+        else:
+            print(f"{original_name} -> {dest_folder} (Renamed to: {final_name})")
 
 def main():
     # handle retrieving user path
