@@ -1,6 +1,6 @@
 # Organizer CLI
 
-`organizer.py` is a small interactive Python script that sorts loose files in a folder into category subfolders such as `Images`, `Documents`, `Videos`, and `Archives`.
+`organizer.py` is a small Python script that sorts loose files in a folder into category subfolders such as `Images`, `Documents`, `Videos`, and `Archives`.
 
 ## Features
 
