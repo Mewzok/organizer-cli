@@ -48,9 +48,11 @@ Example:
 {
     "Images": [".png", ".jpg"],
     "Documents": [".pdf", ".txt"],
-    "Other": [".*"]
+    "Archives": [".zip", ".tar.gz"]
 }
 ```
+
+Any files not matching a folder in the config will be placed in an "Optional" folder.
 
 If `config.json` does not exist, the script creates a default one automatically.
 
