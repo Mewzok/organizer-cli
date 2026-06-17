@@ -265,7 +265,7 @@ def main():
         print(f"Error: '{user_path}' is not a folder.")
         sys.exit(1)
 
-     # check for and use custom config, else use or create default
+    # check for and use custom config, else use or create default
     if custom_config_path:
         config = manage_user_config(custom_config_path)
     else:
