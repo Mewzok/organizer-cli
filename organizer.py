@@ -3,6 +3,9 @@ import shlex
 import argparse
 import sys
 import json
+import shutil
+import os
+import stat
 
 DEFAULT_CONFIG = {
     "Images": [
@@ -37,7 +40,8 @@ DEFAULT_CONFIG = {
         ".indd",
         ".pub",
         ".html",
-        ".htm"
+        ".htm",
+        ".json"
     ],
     "Videos": [
         ".mp4",
@@ -182,6 +186,14 @@ def build_plan(user_path, config):
     # for each item in the directory, is_file() ensures it does not enter subfolders
     for file_path in user_path.iterdir():
         if file_path.is_file():
+            # ensure script itself is not include in organization
+            if file_path.name == Path(sys.argv[0]).name:
+                continue
+
+            # skip system files
+            if file_path.name.startswith(".") or file_path.name.lower() == "desktop.ini":
+                continue
+
             ext = file_path.suffix.lower()
 
             target_folder_name = ext_to_folder.get(ext, "Other")
@@ -232,6 +244,33 @@ def print_plan(plan):
         else:
             print(f"{original_name} -> {dest_folder} (Renamed to: {final_name})")
 
+def execute_plan(plan):
+    if not plan:
+        print("No files found to organize.")
+        return
+    
+    print("\nOrganizing files...")
+    success_count = 0
+    
+    for src_path, dest_path in plan.items():
+        try:
+            # check/create target folder
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # remove potential read-only flag to ensure all files can be moved
+            if src_path.exists():
+                os.chmod(src_path, stat.S_IWRITE)
+
+            shutil.move(src_path, dest_path)
+            success_count += 1
+
+        except PermissionError:
+            print(f"Skipped: '{src_path.name}' File is currently open or locked by another app.")
+        except Exception as e:
+            print(f"Failed to move '{src_path.name}'. Error: {e}")
+
+    print(f"\nDone. Successfully organized {success_count} of {len(plan)} files.")
+
 def main():
     # handle retrieving user path
     while True:
@@ -272,11 +311,11 @@ def main():
                 print_plan(plan)
                 confirm = input("Confirm? (Y/N): ").strip().lower()
                 if confirm in {"y", "yes"}:
-                    print("Plan executed")
+                    execute_plan(plan)
                 else:
                     print("Organization cancelled.")
             else:
-                print("Plan executed")
+                execute_plan(plan)
 
             break
             
